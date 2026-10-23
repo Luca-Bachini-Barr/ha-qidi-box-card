@@ -170,9 +170,12 @@ class QidiBoxCard extends HTMLElement {
     return { s, a, empty, loaded: !empty && a.slot_state === 2 };
   }
 
-  _send(gcode) {
+  // Load/unload/eject take ~2.5 min, longer than moonraker-api's 120 s request timeout, so the
+  // service call ends in an error with an empty message while the printer carries on.
+  // For those (long=true) only real Klipper errors, which have a message, are reported.
+  _send(gcode, long = false) {
     return this._hass.callService("moonraker", "send_gcode", { device_id: this._config.device_id, gcode })
-      .catch((e) => alert(`QIDI Box: "${gcode}" failed: ${e.message || e}`));
+      .catch((e) => { if (!long || e?.message) alert(`QIDI Box: "${gcode}" failed: ${e.message || e}`); });
   }
 
   _render() {
@@ -356,7 +359,7 @@ class QidiBoxCard extends HTMLElement {
     root.querySelectorAll("[data-action]").forEach((el) =>
       el.addEventListener("click", () => {
         const b = BUTTONS[Number(el.dataset.action)];
-        if (confirm(b.confirm.replace("{slot}", labels[sel]))) this._send(`${b.cmd} SLOT=${sel}`);
+        if (confirm(b.confirm.replace("{slot}", labels[sel]))) this._send(`${b.cmd} SLOT=${sel}`, true);
       })
     );
     const update = (vendor, fil, color) => {

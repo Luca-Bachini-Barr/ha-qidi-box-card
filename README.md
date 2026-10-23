@@ -37,8 +37,8 @@ print_state: sensor.q2_current_print_state          # disables controls while pr
 Entity IDs depend on your printer's name and area. Leave out `device_id` for a display-only card.
 
 ## G-code sent by the controls
-The controls send the commands the Q2 touchscreen uses on firmware with the Box V2 `multi_color_controller` (`n` = 0-based slot), through `moonraker.send_gcode`:
-- `LOAD_FILAMENT_CONTROL SLOT=slot<n>`, `UNLOAD_FILAMENT_CONTROL SLOT=slot<n>`, `EJECT_FILAMENT_CONTROL SLOT=slot<n>`
-- `UPDATE_FILAMENT_INFORMATION SLOT=slot<n> COLOR='<hex>' VENDOR='<vendor>' FILAMENT='<filament_id>'`
+The controls send the commands the Q2 touchscreen uses on firmware with the Box V2 `multi_color_controller` (`n` = 0-based slot as a bare integer, e.g. `SLOT=2`; `SLOT=slot2` is rejected with "unable to parse"), through `moonraker.send_gcode`:
+- `LOAD_FILAMENT_CONTROL SLOT=<n>`, `UNLOAD_FILAMENT_CONTROL SLOT=<n>`, `EJECT_FILAMENT_CONTROL SLOT=<n>`
+- `UPDATE_FILAMENT_INFORMATION SLOT=<n> COLOR='<hex>' VENDOR='<vendor>' FILAMENT='<filament_id>'`
 
 Fluidd's `E_LOAD` / `E_UNLOAD` / `E_BOX` macros are legacy and are not registered on this firmware. The `SLOT`, `VENDOR` and `FILAMENT` value formats were taken from the touchscreen client and have not all been tested on hardware. Use the controls only with the printer idle.

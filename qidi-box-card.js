@@ -21,7 +21,7 @@
 // "unable to parse slot2"):
 //   LOAD_FILAMENT_CONTROL / UNLOAD_FILAMENT_CONTROL / EJECT_FILAMENT_CONTROL SLOT=<n>
 //   UPDATE_FILAMENT_INFORMATION SLOT=<n> COLOR='<hex>' VENDOR='<vendor>' FILAMENT='<filament name>'
-// (load, unload and update confirmed by capturing the touchscreen's own commands on 2026-10-23)
+// (all four confirmed by capturing the touchscreen's own commands on 2026-10-23)
 // (Fluidd's E_LOAD / E_UNLOAD / E_BOX and its 2-vendor SAVE_VARIABLE lists are legacy and
 // not registered on this firmware.)
 
@@ -138,7 +138,7 @@ const spool = (color, empty) => {
 };
 
 const BUTTONS = [
-  { cmd: "EJECT_FILAMENT_CONTROL", label: "Uninstall", confirm: "Uninstall (eject) the filament in slot {slot} back out of the box?" },
+  { cmd: "EJECT_FILAMENT_CONTROL", label: "Eject", confirm: "Eject the filament in slot {slot} back out of the box?" },
   { cmd: "LOAD_FILAMENT_CONTROL", label: "Load", confirm: "Load the filament from slot {slot} into the toolhead?" },
   { cmd: "UNLOAD_FILAMENT_CONTROL", label: "Unload", confirm: "Unload the filament in slot {slot} from the toolhead?" },
 ];

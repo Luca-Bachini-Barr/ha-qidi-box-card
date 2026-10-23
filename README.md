@@ -9,7 +9,7 @@ It reads entities from the Moonraker integration fork [Luca-Bachini-Barr/moonrak
 - Marks the slot currently feeding the toolhead.
 - Box humidity, temperature and drying state.
 - A progress banner during a colour change (e.g. `1A → 1C · Unloading`), plus any Box warnings.
-- Optional controls: **Load**, **Unload**, **Uninstall** (eject the filament back out of the box), and setting the slot's vendor, material and colour (from the Box V2 material database). Load, Unload and Uninstall ask for confirmation first; vendor, filament and colour changes are sent straight away. All controls are disabled while the printer is printing.
+- Optional controls: **Load**, **Unload**, **Eject** (push the filament back out of the box), and setting the slot's vendor, material and colour (from the Box V2 material database). Load, Unload and Eject ask for confirmation first; vendor, filament and colour changes are sent straight away. All controls are disabled while the printer is printing.
 
 ## Installation
 **HACS:** HACS → ⋮ → **Custom repositories** → add `https://github.com/Luca-Bachini-Barr/ha-qidi-box-card` as type **Dashboard**, then install **QIDI Box Card**. HACS registers the resource for you.
@@ -41,4 +41,4 @@ The controls send the commands the Q2 touchscreen uses on firmware with the Box 
 - `LOAD_FILAMENT_CONTROL SLOT=<n>`, `UNLOAD_FILAMENT_CONTROL SLOT=<n>`, `EJECT_FILAMENT_CONTROL SLOT=<n>`
 - `UPDATE_FILAMENT_INFORMATION SLOT=<n> COLOR='<hex>' VENDOR='<vendor>' FILAMENT='<filament name>'` (e.g. `VENDOR='Generic' FILAMENT='PLA+'`)
 
-Load, unload and the filament update match what the Q2 touchscreen itself sends (captured from the printer's console); eject has not been captured yet. Load, unload and eject run for a few minutes; the card sends them with `wait: false` (needs the Moonraker fork with the `send_gcode` `wait` option) and locks the buttons until the filament change has finished, so a second press can't queue another run. Fluidd's `E_LOAD` / `E_UNLOAD` / `E_BOX` macros are legacy and are not registered on this firmware. Use the controls only with the printer idle.
+All four commands match what the Q2 touchscreen itself sends (captured from the printer's console). Load, unload and eject run for a few minutes; the card sends them with `wait: false` (needs the Moonraker fork with the `send_gcode` `wait` option) and locks the buttons until the filament change has finished, so a second press can't queue another run. Fluidd's `E_LOAD` / `E_UNLOAD` / `E_BOX` macros are legacy and are not registered on this firmware. Use the controls only with the printer idle.

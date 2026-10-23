@@ -17,9 +17,10 @@
 // colors                                  # optional override of the colour palette
 //
 // Controls send what the Q2 touchscreen (QIDI_Client) sends on firmware with the Box V2
-// multi_color_controller (n = 0-based slot):
-//   LOAD_FILAMENT_CONTROL / UNLOAD_FILAMENT_CONTROL / EJECT_FILAMENT_CONTROL SLOT=slot<n>
-//   UPDATE_FILAMENT_INFORMATION SLOT=slot<n> COLOR='<hex>' VENDOR='<vendor>' FILAMENT='<filament_id>'
+// multi_color_controller (n = 0-based slot as a bare integer; "SLOT=slot2" fails with
+// "unable to parse slot2"):
+//   LOAD_FILAMENT_CONTROL / UNLOAD_FILAMENT_CONTROL / EJECT_FILAMENT_CONTROL SLOT=<n>
+//   UPDATE_FILAMENT_INFORMATION SLOT=<n> COLOR='<hex>' VENDOR='<vendor>' FILAMENT='<filament_id>'
 // (Fluidd's E_LOAD / E_UNLOAD / E_BOX and its 2-vendor SAVE_VARIABLE lists are legacy and
 // not registered on this firmware.)
 
@@ -355,13 +356,13 @@ class QidiBoxCard extends HTMLElement {
     root.querySelectorAll("[data-action]").forEach((el) =>
       el.addEventListener("click", () => {
         const b = BUTTONS[Number(el.dataset.action)];
-        if (confirm(b.confirm.replace("{slot}", labels[sel]))) this._send(`${b.cmd} SLOT=slot${sel}`);
+        if (confirm(b.confirm.replace("{slot}", labels[sel]))) this._send(`${b.cmd} SLOT=${sel}`);
       })
     );
     const update = (vendor, fil, color) => {
       const hex = String(color || "#FAFAFA").replace("#", "").toUpperCase();
       this._draft = null;
-      this._send(`UPDATE_FILAMENT_INFORMATION SLOT=slot${sel} COLOR='${hex}' VENDOR='${vendor}' FILAMENT='${fil}'`);
+      this._send(`UPDATE_FILAMENT_INFORMATION SLOT=${sel} COLOR='${hex}' VENDOR='${vendor}' FILAMENT='${fil}'`);
     };
     root.querySelectorAll("select[data-var]").forEach((el) => {
       el.addEventListener("change", () => {

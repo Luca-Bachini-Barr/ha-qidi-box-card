@@ -170,12 +170,12 @@ class QidiBoxCard extends HTMLElement {
     return { s, a, empty, loaded: !empty && a.slot_state === 2 };
   }
 
-  // Load/unload/eject take ~2.5 min, longer than moonraker-api's 120 s request timeout, so the
-  // service call ends in an error with an empty message while the printer carries on.
-  // For those (long=true) only real Klipper errors, which have a message, are reported.
+  // Load/unload/eject take ~2.5 min, longer than moonraker-api's 120 s request timeout, so they
+  // are sent with wait: false (Moonraker fork PR #7): the call returns after a few seconds and
+  // still fails if Klipper rejects the command straight away.
   _send(gcode, long = false) {
-    return this._hass.callService("moonraker", "send_gcode", { device_id: this._config.device_id, gcode })
-      .catch((e) => { if (!long || e?.message) alert(`QIDI Box: "${gcode}" failed: ${e.message || e}`); });
+    return this._hass.callService("moonraker", "send_gcode", { device_id: this._config.device_id, gcode, ...(long && { wait: false }) })
+      .catch((e) => alert(`QIDI Box: "${gcode}" failed: ${e.message || e}`));
   }
 
   _render() {

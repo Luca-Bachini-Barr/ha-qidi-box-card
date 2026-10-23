@@ -20,7 +20,8 @@
 // multi_color_controller (n = 0-based slot as a bare integer; "SLOT=slot2" fails with
 // "unable to parse slot2"):
 //   LOAD_FILAMENT_CONTROL / UNLOAD_FILAMENT_CONTROL / EJECT_FILAMENT_CONTROL SLOT=<n>
-//   UPDATE_FILAMENT_INFORMATION SLOT=<n> COLOR='<hex>' VENDOR='<vendor>' FILAMENT='<filament_id>'
+//   UPDATE_FILAMENT_INFORMATION SLOT=<n> COLOR='<hex>' VENDOR='<vendor>' FILAMENT='<filament name>'
+// (load, unload and update confirmed by capturing the touchscreen's own commands on 2026-10-23)
 // (Fluidd's E_LOAD / E_UNLOAD / E_BOX and its 2-vendor SAVE_VARIABLE lists are legacy and
 // not registered on this firmware.)
 
@@ -226,7 +227,7 @@ class QidiBoxCard extends HTMLElement {
       }
       const steps = ["cutting", "unloading", "loading"];
       const idx = steps.indexOf(chg.state);
-      const words = { starting: "Starting", cutting: "Cutting filament", unloading: "Unloading", loading: "Loading", paused: "Paused" };
+      const words = { starting: "Starting", heat: "Heating", cutting: "Cutting filament", unloading: "Unloading", loading: "Loading", wipe: "Wiping nozzle", paused: "Paused" };
       const text = chg.state === "changing"
         ? (this._changeTo ? `Purging ${slotLabel(this._changeTo)}` : "In progress")
         : words[chg.state] || chg.state;
@@ -253,8 +254,12 @@ class QidiBoxCard extends HTMLElement {
       const { a, empty, loaded } = this._slotInfo(sel);
       const printing = st(c.print_state)?.state === "printing";
       const off = printing ? "disabled" : "";
+      // A load/unload/eject runs for minutes after the call returns. Lock the buttons while the
+      // change sensor shows it running, plus a grace period for the sensor's polling delay,
+      // so a second press doesn't queue another flow.
+      const busy = Date.now() < (this._busyUntil || 0) || (chg && !["idle", "unknown", "unavailable"].includes(chg.state));
       // Same enable rules as QIDI's Fluidd box card.
-      const enabled = [!empty, !empty && !loaded, loaded].map((ok) => ok && !printing);
+      const enabled = [!empty, !empty && !loaded, loaded].map((ok) => ok && !printing && !busy);
       const buttons = BUTTONS.map((b, n) => `<button class="action" data-action="${n}" ${enabled[n] ? "" : "disabled"}>${b.label}</button>`).join("");
       // Vendor picked in the dropdown but no filament chosen yet is kept as a local draft.
       const current = findFilament(a.filament_id);
@@ -359,13 +364,19 @@ class QidiBoxCard extends HTMLElement {
     root.querySelectorAll("[data-action]").forEach((el) =>
       el.addEventListener("click", () => {
         const b = BUTTONS[Number(el.dataset.action)];
-        if (confirm(b.confirm.replace("{slot}", labels[sel]))) this._send(`${b.cmd} SLOT=${sel}`, true);
+        if (!confirm(b.confirm.replace("{slot}", labels[sel]))) return;
+        this._busyUntil = Date.now() + 60000;
+        setTimeout(() => this._render(), 60000);
+        this._render();
+        this._send(`${b.cmd} SLOT=${sel}`, true);
       })
     );
     const update = (vendor, fil, color) => {
       const hex = String(color || "#FAFAFA").replace("#", "").toUpperCase();
       this._draft = null;
-      this._send(`UPDATE_FILAMENT_INFORMATION SLOT=${sel} COLOR='${hex}' VENDOR='${vendor}' FILAMENT='${fil}'`);
+      // The touchscreen sends the filament's name (FILAMENT='PLA+'), not its id.
+      const name = findFilament(fil)?.name || fil;
+      this._send(`UPDATE_FILAMENT_INFORMATION SLOT=${sel} COLOR='${hex}' VENDOR='${vendor}' FILAMENT='${name}'`);
     };
     root.querySelectorAll("select[data-var]").forEach((el) => {
       el.addEventListener("change", () => {

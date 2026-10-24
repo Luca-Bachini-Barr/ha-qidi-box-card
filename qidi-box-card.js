@@ -229,13 +229,13 @@ class QidiBoxCard extends HTMLElement {
       }
       const steps = ["cutting", "unloading", "loading"];
       const idx = steps.indexOf(chg.state);
-      const words = { starting: "Starting", heat: "Heating", cutting: "Cutting filament", unloading: "Unloading", loading: "Loading", wipe: "Wiping nozzle", paused: "Paused" };
+      const words = { starting: "Starting", heat: "Heating", cutting: "Cutting filament", unloading: "Unloading", loading: "Loading", wipe: "Wiping nozzle", eject: "Ejecting", paused: "Paused" };
       let text = chg.state === "changing"
         ? (this._changeTo ? `Purging ${slotLabel(this._changeTo)}` : "In progress")
         : words[chg.state] || chg.state;
       // Unloading works on the slot currently in the toolhead (loaded_slot, which differs from
-      // target_slot during a swap); loading works on target_slot.
-      const stepSlot = { unloading: ca.loaded_slot ?? this._changeFrom ?? ca.target_slot, loading: ca.target_slot }[chg.state];
+      // target_slot during a swap); loading and ejecting work on target_slot.
+      const stepSlot = { unloading: ca.loaded_slot ?? this._changeFrom ?? ca.target_slot, loading: ca.target_slot, eject: ca.target_slot }[chg.state];
       if (stepSlot) text += ` Slot ${slotLabel(stepSlot)}`;
       const noz = Number(st(c.nozzle)?.state), tgt = Number(st(c.nozzle_target)?.state);
       if (chg.state === "heat" && Number.isFinite(noz))

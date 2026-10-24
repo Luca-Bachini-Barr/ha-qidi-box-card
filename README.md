@@ -8,7 +8,7 @@ It reads entities from the Moonraker integration fork [Luca-Bachini-Barr/moonrak
 - One spool per slot, drawn in the loaded filament's colour, with its material and temperature range. Empty or run-out slots are shown dashed.
 - Marks the slot currently feeding the toolhead.
 - Box humidity, temperature and drying state.
-- A progress banner during a colour change (e.g. `1A → 1C · Unloading`, or `Heating 156 / 240 °C` while the nozzle heats), plus any Box warnings.
+- A progress banner during a colour change (e.g. `1A → 1C · Unloading Slot 1A`, `Loading Slot 1C`, or `Heating 156 / 240 °C` while the nozzle heats), plus any Box warnings.
 - Optional controls: **Load**, **Unload**, **Eject** (push the filament back out of the box), and setting the slot's vendor, material and colour (from the Box V2 material database). Load, Unload and Eject ask for confirmation first; vendor, filament and colour changes are sent straight away. All controls are disabled while the printer is printing.
 
 ## Installation

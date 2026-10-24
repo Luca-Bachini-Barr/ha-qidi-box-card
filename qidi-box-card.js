@@ -233,6 +233,10 @@ class QidiBoxCard extends HTMLElement {
       let text = chg.state === "changing"
         ? (this._changeTo ? `Purging ${slotLabel(this._changeTo)}` : "In progress")
         : words[chg.state] || chg.state;
+      // Unloading works on the slot currently in the toolhead (loaded_slot, which differs from
+      // target_slot during a swap); loading works on target_slot.
+      const stepSlot = { unloading: ca.loaded_slot ?? this._changeFrom ?? ca.target_slot, loading: ca.target_slot }[chg.state];
+      if (stepSlot) text += ` Slot ${slotLabel(stepSlot)}`;
       const noz = Number(st(c.nozzle)?.state), tgt = Number(st(c.nozzle_target)?.state);
       if (chg.state === "heat" && Number.isFinite(noz))
         text += ` ${Math.round(noz)}${Number.isFinite(tgt) && tgt > 0 ? ` / ${Math.round(tgt)}` : ""} °C`;

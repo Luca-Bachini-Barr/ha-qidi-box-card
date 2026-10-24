@@ -14,6 +14,8 @@
 // print_state: sensor.q2_current_print_state     # controls are disabled while "printing"
 // change: sensor.dining_room_q2_box_filament_change  # optional: banner during a colour change
 // warnings: sensor.dining_room_q2_box_warnings       # optional: shows box warnings
+// nozzle: sensor.q2_extruder_temperature             # optional: shown while heating
+// nozzle_target: number.q2_extruder_target           # optional: shown while heating
 // colors                                  # optional override of the colour palette
 //
 // Controls send what the Q2 touchscreen (QIDI_Client) sends on firmware with the Box V2
@@ -155,7 +157,7 @@ class QidiBoxCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     const c = this._config;
-    const ids = [...c.slots, c.humidity, c.temperature, c.drying, c.print_state, c.change, c.warnings].filter(Boolean);
+    const ids = [...c.slots, c.humidity, c.temperature, c.drying, c.print_state, c.change, c.warnings, c.nozzle, c.nozzle_target].filter(Boolean);
     // Only re-render when one of our entities changed, and never while a dropdown is open.
     const key = ids.map((id) => { const s = hass.states[id]; return s ? s.state + JSON.stringify(s.attributes) : "-"; }).join("|");
     if (key === this._key) return;
@@ -228,9 +230,12 @@ class QidiBoxCard extends HTMLElement {
       const steps = ["cutting", "unloading", "loading"];
       const idx = steps.indexOf(chg.state);
       const words = { starting: "Starting", heat: "Heating", cutting: "Cutting filament", unloading: "Unloading", loading: "Loading", wipe: "Wiping nozzle", paused: "Paused" };
-      const text = chg.state === "changing"
+      let text = chg.state === "changing"
         ? (this._changeTo ? `Purging ${slotLabel(this._changeTo)}` : "In progress")
         : words[chg.state] || chg.state;
+      const noz = Number(st(c.nozzle)?.state), tgt = Number(st(c.nozzle_target)?.state);
+      if (chg.state === "heat" && Number.isFinite(noz))
+        text += ` ${Math.round(noz)}${Number.isFinite(tgt) && tgt > 0 ? ` / ${Math.round(tgt)}` : ""} °C`;
       const route = this._changeTo
         ? `${this._changeFrom ? esc(slotLabel(this._changeFrom)) + " " : ""}→ ${esc(slotLabel(this._changeTo))}`
         : "";

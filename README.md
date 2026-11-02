@@ -2,7 +2,7 @@
 
 A Home Assistant dashboard card for the **QIDI Box** multi-material unit on QIDI printers running Klipper/Moonraker (built on a Qidi Q2). It shows a Fluidd-style spool view and can load, unload and set filament for each slot.
 
-It reads entities from the Moonraker integration fork [Luca-Bachini-Barr/moonraker-home-assistant](https://github.com/Luca-Bachini-Barr/moonraker-home-assistant), which adds the QIDI Box sensors (slot filament, drying, filament change, warnings).
+It reads the entities of the [QIDI Box for Moonraker](https://github.com/Luca-Bachini-Barr/ha-qidi-box) integration (slot filament, drying, filament change, warnings), which adds the Box to a printer set up with the standard [Moonraker integration](https://github.com/marcolivierarsenault/moonraker-home-assistant).
 
 ## Features
 - One spool per slot, drawn in the loaded filament's colour, with its material and temperature range. Empty or run-out slots are shown dashed.
@@ -33,14 +33,14 @@ change: sensor.q2_box_filament_change               # optional: colour-change ba
 warnings: sensor.q2_box_warnings                    # optional: Box warnings
 nozzle: sensor.q2_extruder_temperature              # optional: nozzle temp while heating
 nozzle_target: number.q2_extruder_target            # optional: target temp while heating
-device_id: <moonraker device id>                    # optional: enables the controls
+device_id: <printer device id>                      # optional: enables the controls
 print_state: sensor.q2_current_print_state          # disables controls while printing
 ```
 Entity IDs depend on your printer's name and area. Leave out `device_id` for a display-only card.
 
 ## G-code sent by the controls
-The controls send the commands the Q2 touchscreen uses on firmware with the Box V2 `multi_color_controller` (`n` = 0-based slot as a bare integer, e.g. `SLOT=2`; `SLOT=slot2` is rejected with "unable to parse"), through `moonraker.send_gcode`:
+The controls send the commands the Q2 touchscreen uses on firmware with the Box V2 `multi_color_controller` (`n` = 0-based slot as a bare integer, e.g. `SLOT=2`; `SLOT=slot2` is rejected with "unable to parse"), through `qidi_box.send_gcode`:
 - `LOAD_FILAMENT_CONTROL SLOT=<n>`, `UNLOAD_FILAMENT_CONTROL SLOT=<n>`, `EJECT_FILAMENT_CONTROL SLOT=<n>`
 - `UPDATE_FILAMENT_INFORMATION SLOT=<n> COLOR='<hex>' VENDOR='<vendor>' FILAMENT='<filament name>'` (e.g. `VENDOR='Generic' FILAMENT='PLA+'`)
 
-All four commands match what the Q2 touchscreen itself sends (captured from the printer's console). Load, unload and eject run for a few minutes; the card sends them with `wait: false` (needs the Moonraker fork with the `send_gcode` `wait` option) and locks the buttons until the filament change has finished, so a second press can't queue another run. Fluidd's `E_LOAD` / `E_UNLOAD` / `E_BOX` macros are legacy and are not registered on this firmware. Use the controls only with the printer idle.
+All four commands match what the Q2 touchscreen itself sends (captured from the printer's console). Load, unload and eject run for a few minutes; the card sends them with `wait: false` and locks the buttons until the filament change has finished, so a second press can't queue another run. Fluidd's `E_LOAD` / `E_UNLOAD` / `E_BOX` macros are legacy and are not registered on this firmware. Use the controls only with the printer idle.

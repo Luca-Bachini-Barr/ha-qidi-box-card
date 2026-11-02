@@ -3,14 +3,14 @@
 //
 // type: custom:qidi-box-card
 // title: QIDI Box 1                       # optional
-// slots:                                  # Moonraker fork "Box Slot N Filament" sensors
+// slots:                                  # "Box Slot N Filament" sensors (ha-qidi-box)
 //   - sensor.dining_room_q2_box_slot_1_filament
 //   - ...
 // labels: [1A, 1B, 1C, 1D]                # optional, default 1A..1D
 // humidity: sensor.q2_heater_box1_humidity        # optional
 // temperature: sensor.q2_heater_box1_temperature  # optional
 // drying: binary_sensor.dining_room_q2_box_1_drying # optional
-// device_id: <moonraker device id>        # enables the controls (moonraker.send_gcode)
+// device_id: <printer device id>          # enables the controls (qidi_box.send_gcode)
 // print_state: sensor.q2_current_print_state     # controls are disabled while "printing"
 // change: sensor.dining_room_q2_box_filament_change  # optional: banner during a colour change
 // warnings: sensor.dining_room_q2_box_warnings       # optional: shows box warnings
@@ -170,14 +170,14 @@ class QidiBoxCard extends HTMLElement {
     const s = this._hass.states[this._config.slots[i]];
     const a = s?.attributes || {};
     const empty = !s || s.state === "Empty" || a.runout === true;
-    return { s, a, empty, loaded: !empty && a.slot_state === 2 };
+    return { s, a, empty, loaded: !empty && (a.active === true || a.slot_state === 2) };
   }
 
-  // Load/unload/eject take ~2.5 min, longer than moonraker-api's 120 s request timeout, so they
-  // are sent with wait: false (Moonraker fork PR #7): the call returns after a few seconds and
-  // still fails if Klipper rejects the command straight away.
+  // Load/unload/eject take ~2.5 min, so they are sent with wait: false (ha-qidi-box's
+  // qidi_box.send_gcode): the call returns after a few seconds and still fails if Klipper
+  // rejects the command straight away.
   _send(gcode, long = false) {
-    return this._hass.callService("moonraker", "send_gcode", { device_id: this._config.device_id, gcode, ...(long && { wait: false }) })
+    return this._hass.callService("qidi_box", "send_gcode", { device_id: this._config.device_id, gcode, ...(long && { wait: false }) })
       .catch((e) => alert(`QIDI Box: "${gcode}" failed: ${e.message || e}`));
   }
 

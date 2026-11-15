@@ -164,6 +164,11 @@ class QidiBoxCard extends HTMLElement {
     const key = ids.map((id) => { const s = hass.states[id]; return s ? s.state + JSON.stringify(s.attributes) : "-"; }).join("|");
     if (key === this._key) return;
     this._key = key;
+    this._renderWhenFree();
+  }
+
+  // Re-render now, or once the open dropdown or colour picker loses focus.
+  _renderWhenFree() {
     if (["SELECT", "INPUT"].includes(this.shadowRoot.activeElement?.tagName)) { this._pending = true; return; }
     this._render();
   }
@@ -384,7 +389,7 @@ class QidiBoxCard extends HTMLElement {
         const b = BUTTONS[Number(el.dataset.action)];
         if (!confirm(b.confirm.replace("{slot}", labels[sel]))) return;
         this._busyUntil = Date.now() + 60000;
-        setTimeout(() => this._render(), 60000);
+        setTimeout(() => this._renderWhenFree(), 60000);
         this._render();
         this._send(`${b.cmd} SLOT=${sel}`, true);
       })
@@ -415,8 +420,13 @@ class QidiBoxCard extends HTMLElement {
       picker.addEventListener("click", (e) => {
         if (!this._ctl.fil) { e.preventDefault(); alert("Choose a vendor and filament for this slot first."); }
       });
-      // "change" fires once the colour is confirmed, not on every drag.
-      picker.addEventListener("change", () => update(this._ctl.vendor, this._ctl.fil, picker.value));
+      // "change" fires once the colour is confirmed, not on every drag. The slot's
+      // vendor and filament are read again, as they may have changed while it was open.
+      picker.addEventListener("change", () => {
+        const now = findFilament(this._slotInfo(sel).a.filament_id);
+        update(now?.vendor || this._ctl.vendor, now?.id || this._ctl.fil, picker.value);
+        picker.blur();
+      });
       picker.addEventListener("blur", () => { if (this._pending) { this._pending = false; this._render(); } });
     }
   }

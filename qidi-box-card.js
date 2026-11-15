@@ -17,6 +17,7 @@
 // nozzle: sensor.q2_extruder_temperature             # optional: shown while heating
 // nozzle_target: number.q2_extruder_target           # optional: shown while heating
 // colors                                  # optional override of the colour palette
+//                                         # (the last swatch picks any other colour)
 //
 // Controls send what the Q2 touchscreen (QIDI_Client) sends on firmware with the Box V2
 // multi_color_controller (n = 0-based slot as a bare integer; "SLOT=slot2" fails with
@@ -158,11 +159,17 @@ class QidiBoxCard extends HTMLElement {
     this._hass = hass;
     const c = this._config;
     const ids = [...c.slots, c.humidity, c.temperature, c.drying, c.print_state, c.change, c.warnings, c.nozzle, c.nozzle_target].filter(Boolean);
-    // Only re-render when one of our entities changed, and never while a dropdown is open.
+    // Only re-render when one of our entities changed, and never while a dropdown or the
+    // colour picker is open.
     const key = ids.map((id) => { const s = hass.states[id]; return s ? s.state + JSON.stringify(s.attributes) : "-"; }).join("|");
     if (key === this._key) return;
     this._key = key;
-    if (this.shadowRoot.activeElement?.tagName === "SELECT") { this._pending = true; return; }
+    this._renderWhenFree();
+  }
+
+  // Re-render now, or once the open dropdown or colour picker loses focus.
+  _renderWhenFree() {
+    if (["SELECT", "INPUT"].includes(this.shadowRoot.activeElement?.tagName)) { this._pending = true; return; }
     this._render();
   }
 
@@ -281,8 +288,13 @@ class QidiBoxCard extends HTMLElement {
       const filOpts = (fil ? "" : `<option value="" selected>${vendor ? "Choose filament…" : "—"}</option>`) +
         (FILAMENT_DB[vendor] || []).map(([id, name, , lo, hi]) =>
           `<option value="${esc(id)}" ${id === fil ? "selected" : ""}>${esc(name)} (${lo}–${hi} °C)</option>`).join("");
+      // Any colour outside the palette: the Box stores and reports it exactly.
+      const custom = /^#[0-9a-f]{6}$/i.test(a.color || "") && !cKey;
       const swatches = Object.entries(colors).map(([k, hex]) =>
-        `<button class="swatch${k === cKey ? " current" : ""}" data-color="${esc(hex)}" title="${esc(hex)}" style="background:${esc(hex)}" ${off}></button>`).join("");
+        `<button class="swatch${k === cKey ? " current" : ""}" data-color="${esc(hex)}" title="${esc(hex)}" style="background:${esc(hex)}" ${off}></button>`).join("") +
+        `<label class="swatch picker${custom ? " current" : ""}" title="${custom ? esc(a.color.toUpperCase()) : "Other colour…"}"
+           style="background:${custom ? esc(a.color) : "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)"}">
+           <input type="color" data-custom value="${esc(custom ? a.color.toLowerCase() : "#fafafa")}" ${off}></label>`;
       controls = `
         <div class="controls">
           <div class="buttons">${buttons}
@@ -339,6 +351,8 @@ class QidiBoxCard extends HTMLElement {
         .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(22px, 1fr)); gap: 5px; }
         .swatch { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--divider-color); cursor: pointer; padding: 0; }
         .swatch.current { outline: 2px solid var(--primary-color); outline-offset: 2px; }
+        .swatch.picker { display: block; position: relative; overflow: hidden; box-sizing: border-box; }
+        .swatch.picker input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
         .change { margin-top: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer;
                   border: 1px solid var(--primary-color); background: color-mix(in srgb, var(--primary-color) 12%, transparent); }
         .change-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; }
@@ -375,7 +389,7 @@ class QidiBoxCard extends HTMLElement {
         const b = BUTTONS[Number(el.dataset.action)];
         if (!confirm(b.confirm.replace("{slot}", labels[sel]))) return;
         this._busyUntil = Date.now() + 60000;
-        setTimeout(() => this._render(), 60000);
+        setTimeout(() => this._renderWhenFree(), 60000);
         this._render();
         this._send(`${b.cmd} SLOT=${sel}`, true);
       })
@@ -401,6 +415,20 @@ class QidiBoxCard extends HTMLElement {
         update(this._ctl.vendor, this._ctl.fil, el.dataset.color);
       })
     );
+    const picker = root.querySelector("input[data-custom]");
+    if (picker) {
+      picker.addEventListener("click", (e) => {
+        if (!this._ctl.fil) { e.preventDefault(); alert("Choose a vendor and filament for this slot first."); }
+      });
+      // "change" fires once the colour is confirmed, not on every drag. The slot's
+      // vendor and filament are read again, as they may have changed while it was open.
+      picker.addEventListener("change", () => {
+        const now = findFilament(this._slotInfo(sel).a.filament_id);
+        update(now?.vendor || this._ctl.vendor, now?.id || this._ctl.fil, picker.value);
+        picker.blur();
+      });
+      picker.addEventListener("blur", () => { if (this._pending) { this._pending = false; this._render(); } });
+    }
   }
 
   getCardSize() { return this._config?.device_id ? 8 : 4; }

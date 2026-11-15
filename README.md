@@ -9,7 +9,7 @@ It reads the entities of the [QIDI Box for Moonraker](https://github.com/Luca-Ba
 - Marks the slot currently feeding the toolhead.
 - Box humidity, temperature and drying state.
 - A progress banner during a colour change (e.g. `1A → 1C · Unloading Slot 1A`, `Loading Slot 1C`, or `Heating 156 / 240 °C` while the nozzle heats), plus any Box warnings.
-- Optional controls: **Load**, **Unload**, **Eject** (push the filament back out of the box), and setting the slot's vendor, material and colour (from the Box V2 material database). Load, Unload and Eject ask for confirmation first; vendor, filament and colour changes are sent straight away. All controls are disabled while the printer is printing.
+- Optional controls: **Load**, **Unload**, **Eject** (push the filament back out of the box), and setting the slot's vendor, material and colour (from the Box V2 material database). The colour can be one of the touchscreen's 24 presets or any other colour from the last swatch, which opens your browser's colour picker; the Box stores and reports the exact colour. Load, Unload and Eject ask for confirmation first; vendor, filament and colour changes are sent straight away. All controls are disabled while the printer is printing.
 
 ## Installation
 **HACS:** HACS → ⋮ → **Custom repositories** → add `https://github.com/Luca-Bachini-Barr/ha-qidi-box-card` as type **Dashboard**, then install **QIDI Box Card**. HACS registers the resource for you.

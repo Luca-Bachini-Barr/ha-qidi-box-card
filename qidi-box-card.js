@@ -3,7 +3,7 @@
 //
 // type: custom:qidi-box-card
 // title: QIDI Box 1                       # optional
-// slots:                                  # "Box Slot N Filament" sensors (ha-qidi-box)
+// slots:                                  # "Box Slot N Filament" sensors (Moonraker or ha-qidi-box)
 //   - sensor.dining_room_q2_box_slot_1_filament
 //   - ...
 // labels: [1A, 1B, 1C, 1D]                # optional, default 1A..1D
@@ -127,6 +127,15 @@ const findFilament = (id) => {
     if (f) return { vendor, id: f[0], name: f[1] };
   }
   return null;
+};
+
+// A slot sensor's filament: by filament_id (the QIDI Box integration's sensors), else by vendor
+// and name (the Moonraker integration's Box Slot N Filament sensors carry no filament_id).
+const slotFilament = (s, a) => {
+  const byId = findFilament(a.filament_id);
+  if (byId) return byId;
+  const f = (FILAMENT_DB[a.vendor] || []).find((x) => x[1] === s?.state);
+  return f ? { vendor: a.vendor, id: f[0], name: f[1] } : null;
 };
 
 const spool = (color, empty) => {
@@ -267,7 +276,7 @@ class QidiBoxCard extends HTMLElement {
 
     let controls = "";
     if (c.device_id) {
-      const { a, empty, loaded } = this._slotInfo(sel);
+      const { s, a, empty, loaded } = this._slotInfo(sel);
       const printing = st(c.print_state)?.state === "printing";
       const off = printing ? "disabled" : "";
       // A load/unload/eject runs for minutes after the call returns. Lock the buttons while the
@@ -278,7 +287,7 @@ class QidiBoxCard extends HTMLElement {
       const enabled = [!empty, !empty && !loaded, loaded].map((ok) => ok && !printing && !busy);
       const buttons = BUTTONS.map((b, n) => `<button class="action" data-action="${n}" ${enabled[n] ? "" : "disabled"}>${b.label}</button>`).join("");
       // Vendor picked in the dropdown but no filament chosen yet is kept as a local draft.
-      const current = findFilament(a.filament_id);
+      const current = slotFilament(s, a);
       const vendor = (this._draft?.slot === sel && this._draft.vendor) || current?.vendor || "";
       const fil = current && current.vendor === vendor ? current.id : "";
       const cKey = keyFor(colors, a.color);
@@ -423,7 +432,8 @@ class QidiBoxCard extends HTMLElement {
       // "change" fires once the colour is confirmed, not on every drag. The slot's
       // vendor and filament are read again, as they may have changed while it was open.
       picker.addEventListener("change", () => {
-        const now = findFilament(this._slotInfo(sel).a.filament_id);
+        const info = this._slotInfo(sel);
+        const now = slotFilament(info.s, info.a);
         update(now?.vendor || this._ctl.vendor, now?.id || this._ctl.fil, picker.value);
         picker.blur();
       });

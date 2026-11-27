@@ -20,7 +20,7 @@ It reads the entities of the [QIDI Box for Moonraker](https://github.com/Luca-Ba
 ```yaml
 type: custom:qidi-box-card
 title: QIDI Box 1                                   # optional
-slots:                                              # "Box Slot N Filament" sensors
+slots:                                              # "Box Slot N Filament" sensors (Moonraker or ha-qidi-box)
   - sensor.q2_box_slot_1_filament
   - sensor.q2_box_slot_2_filament
   - sensor.q2_box_slot_3_filament
